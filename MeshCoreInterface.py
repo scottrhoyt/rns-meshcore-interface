@@ -1,0 +1,2 @@
+from rns_meshcore_interface.interface import MeshCoreInterface
+interface_class = MeshCoreInterface
