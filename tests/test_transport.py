@@ -129,3 +129,30 @@ class TestMeshCoreTransport:
             transport.start()
         assert not transport.is_connected
         transport.stop()
+
+    def test_disconnect_callback(self):
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+        )
+        disconnected = []
+        transport.on_disconnect = lambda: disconnected.append(True)
+        transport.start()
+        assert transport.is_connected
+
+        # Simulate connection loss
+        transport._handle_connection_lost()
+        assert not transport.is_connected
+        assert len(disconnected) == 1
+        transport.stop()
+
+    def test_stopping_prevents_reconnect(self):
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+        )
+        transport.start()
+        transport._stopping = True
+        transport._handle_connection_lost()
+        # Should not start reconnect loop when stopping
+        transport.stop()

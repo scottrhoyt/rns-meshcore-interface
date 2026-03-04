@@ -148,3 +148,30 @@ class TestMeshCoreInterface:
         from RNS.Interfaces.Interface import Interface
         assert iface.mode == Interface.MODE_GATEWAY
         iface.detach()
+
+    def test_transport_disconnect_sets_offline(self):
+        iface, owner = make_interface()
+        assert iface.online
+        iface._on_transport_disconnect()
+        assert not iface.online
+        iface.detach()
+
+    def test_transport_reconnect_sets_online(self):
+        iface, owner = make_interface()
+        iface._on_transport_disconnect()
+        assert not iface.online
+        iface._on_transport_reconnect()
+        assert iface.online
+        iface.detach()
+
+    def test_periodic_cleanup_runs(self):
+        iface, owner = make_interface()
+        # Add a partial reassembly buffer
+        iface.reassembly.add_chunk("sender", 99, 0, 2, "dGVzdA==")
+        assert len(iface.reassembly._buffers) == 1
+        # Force expiry
+        for k in iface.reassembly._buffers:
+            iface.reassembly._buffers[k]["timestamp"] = 0
+        iface._periodic_cleanup()
+        assert len(iface.reassembly._buffers) == 0
+        iface.detach()

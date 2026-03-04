@@ -43,8 +43,11 @@ class MeshCoreTransport:
         self._mc = None
         self._subscription = None
         self._is_connected = False
+        self._stopping = False
         self._radio_params = {}
         self.on_message = None  # callback: on_message(sender, text)
+        self.on_disconnect = None  # callback: on_disconnect()
+        self.on_reconnect = None  # callback: on_reconnect()
 
     @property
     def is_connected(self):
@@ -66,6 +69,7 @@ class MeshCoreTransport:
 
     def stop(self):
         """Disconnect and stop the event loop."""
+        self._stopping = True
         if self._loop and self._loop.is_running():
             future = asyncio.run_coroutine_threadsafe(self._disconnect(), self._loop)
             try:
@@ -159,7 +163,39 @@ class MeshCoreTransport:
             return result.type == EventType.MSG_SENT
         except Exception as e:
             log.error(f"send_msg error: {e}")
+            self._handle_connection_lost()
             return False
+
+    def _handle_connection_lost(self):
+        """Trigger reconnection when connection is lost."""
+        if self._is_connected and not self._stopping:
+            self._is_connected = False
+            if self.on_disconnect:
+                self.on_disconnect()
+            if self._loop and self._loop.is_running():
+                asyncio.run_coroutine_threadsafe(self._reconnect_loop(), self._loop)
+
+    async def _reconnect_loop(self):
+        """Attempt reconnection with exponential backoff."""
+        base_delay = 5
+        max_delay = 300
+        delay = base_delay
+
+        while not self._stopping and not self._is_connected:
+            log.info(f"Attempting reconnection in {delay}s...")
+            await asyncio.sleep(delay)
+            if self._stopping:
+                break
+            try:
+                await self._disconnect()
+                await self._connect()
+                log.info("Reconnected successfully")
+                if self.on_reconnect:
+                    self.on_reconnect()
+                break
+            except Exception as e:
+                log.warning(f"Reconnection failed: {e}")
+                delay = min(delay * 2, max_delay)
 
     async def _on_incoming_message(self, event):
         """Handle incoming MeshCore message events."""

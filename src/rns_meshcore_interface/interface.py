@@ -74,6 +74,8 @@ class MeshCoreInterface(Interface):
             meshcore_factory=meshcore_factory,
         )
         self.transport.on_message = self._handle_incoming
+        self.transport.on_disconnect = self._on_transport_disconnect
+        self.transport.on_reconnect = self._on_transport_reconnect
 
         try:
             self.transport.start()
@@ -86,6 +88,11 @@ class MeshCoreInterface(Interface):
 
         # Calculate bitrate from radio params
         self._update_bitrate()
+
+        # Start periodic reassembly cleanup
+        self._cleanup_interval = 60  # seconds
+        self._cleanup_timer = None
+        self._start_cleanup_timer()
 
         self.online = True
         RNS.log(f"{self} is now online (bitrate: {self.bitrate} bps)", RNS.LOG_NOTICE)
@@ -156,8 +163,38 @@ class MeshCoreInterface(Interface):
             self.rxb += len(packet_data)
             self.owner.inbound(packet_data, self)
 
+    def _on_transport_disconnect(self):
+        self.online = False
+        RNS.log(f"{self} lost connection, attempting reconnection...", RNS.LOG_WARNING)
+
+    def _on_transport_reconnect(self):
+        self._update_bitrate()
+        self.online = True
+        RNS.log(f"{self} reconnected", RNS.LOG_NOTICE)
+
+    def _start_cleanup_timer(self):
+        if self._cleanup_timer:
+            self._cleanup_timer.cancel()
+        self._cleanup_timer = threading.Timer(
+            self._cleanup_interval, self._periodic_cleanup
+        )
+        self._cleanup_timer.daemon = True
+        self._cleanup_timer.start()
+
+    def _periodic_cleanup(self):
+        try:
+            removed = self.reassembly.cleanup_expired()
+            if removed > 0:
+                RNS.log(f"{self} cleaned up {removed} expired reassembly buffers", RNS.LOG_DEBUG)
+        except Exception:
+            pass
+        if self.online:
+            self._start_cleanup_timer()
+
     def detach(self):
         self.online = False
+        if self._cleanup_timer:
+            self._cleanup_timer.cancel()
         self.transport.stop()
         RNS.log(f"{self} detached", RNS.LOG_NOTICE)
 
