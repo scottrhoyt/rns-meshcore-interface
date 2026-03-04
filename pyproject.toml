@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.backends"
+
+[project]
+name = "rns-meshcore-interface"
+version = "0.1.0"
+description = "Reticulum network interface using MeshCore as transport"
+requires-python = ">=3.9"
+license = "MIT"
+dependencies = [
+    "rns",
+    "meshcore",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rns_meshcore_interface"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
