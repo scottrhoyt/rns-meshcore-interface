@@ -157,7 +157,7 @@ class MeshCoreTransport:
         if not self._mc:
             return False
         try:
-            result = await self._mc.send_msg(self.peer_address, text)
+            result = await self._mc.commands.send_msg(self.peer_address, text)
             from meshcore.events import EventType
 
             return result.type == EventType.MSG_SENT

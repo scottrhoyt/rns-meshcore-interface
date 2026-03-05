@@ -16,6 +16,20 @@ class FakeMeshCoreForInterface:
         self._subscriptions = {}
         self._sub_counter = 0
         self.sent_messages = []
+        self.commands = self._Commands(self)
+
+    class _Commands:
+        def __init__(self, parent):
+            self._parent = parent
+
+        async def send_msg(self, dst, msg):
+            self._parent.sent_messages.append((dst, msg))
+            from meshcore.events import EventType, Event
+            return Event(EventType.MSG_SENT, {
+                "type": 0,
+                "expected_ack": b"\x00\x00\x00\x00",
+                "suggested_timeout": 5000,
+            })
 
     def subscribe(self, event_type, callback):
         self._sub_counter += 1
@@ -26,15 +40,6 @@ class FakeMeshCoreForInterface:
 
     def unsubscribe(self, sub):
         self._subscriptions.pop(sub.id, None)
-
-    async def send_msg(self, dst, msg):
-        self.sent_messages.append((dst, msg))
-        from meshcore.events import EventType, Event
-        return Event(EventType.MSG_SENT, {
-            "type": 0,
-            "expected_ack": b"\x00\x00\x00\x00",
-            "suggested_timeout": 5000,
-        })
 
     async def disconnect(self):
         pass

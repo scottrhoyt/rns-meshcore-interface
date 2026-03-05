@@ -18,6 +18,18 @@ class FakeMeshCore:
         self._sub_counter = 0
         self.sent_messages = []
         self.disconnected = False
+        self.commands = self._Commands(self)
+
+    class _Commands:
+        def __init__(self, parent):
+            self._parent = parent
+
+        async def send_msg(self, dst, msg):
+            self._parent.sent_messages.append((dst, msg))
+            from meshcore.events import EventType
+            event = MagicMock()
+            event.type = EventType.MSG_SENT
+            return event
 
     def subscribe(self, event_type, callback):
         self._sub_counter += 1
@@ -29,16 +41,6 @@ class FakeMeshCore:
 
     def unsubscribe(self, sub):
         self._subscriptions.pop(sub.id, None)
-
-    async def send_msg(self, dst, msg):
-        self.sent_messages.append((dst, msg))
-        event = MagicMock()
-        event.type = MagicMock()
-        event.type.name = "MSG_SENT"
-        # Make it match EventType.MSG_SENT
-        from meshcore.events import EventType
-        event.type = EventType.MSG_SENT
-        return event
 
     async def disconnect(self):
         self.disconnected = True
