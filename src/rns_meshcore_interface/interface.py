@@ -150,18 +150,24 @@ class MeshCoreInterface(Interface):
     def _handle_incoming(self, sender, text):
         """Called from transport thread when a MeshCore message arrives."""
         if not ChunkEncoder.is_rns_message(text):
+            RNS.log(f"{self} ignoring non-RNS message from {sender}", RNS.LOG_DEBUG)
             return
 
         parsed = ChunkEncoder.parse_chunk(text)
         if parsed is None:
+            RNS.log(f"{self} failed to parse chunk from {sender}", RNS.LOG_DEBUG)
             return
 
         msg_id, chunk_idx, total, b64_fragment = parsed
+        RNS.log(f"{self} RX chunk {chunk_idx+1}/{total} msg_id={msg_id} from {sender}: {b64_fragment[:40]}...", RNS.LOG_DEBUG)
         packet_data = self.reassembly.add_chunk(sender, msg_id, chunk_idx, total, b64_fragment)
 
         if packet_data is not None:
+            RNS.log(f"{self} reassembled {len(packet_data)} bytes from {sender}", RNS.LOG_DEBUG)
             self.rxb += len(packet_data)
             self.owner.inbound(packet_data, self)
+        elif chunk_idx == total - 1:
+            RNS.log(f"{self} final chunk received but reassembly returned None (decode failed?)", RNS.LOG_WARNING)
 
     def _on_transport_disconnect(self):
         self.online = False

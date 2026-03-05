@@ -1,7 +1,9 @@
 import base64
+import logging
 import time
 import threading
 
+log = logging.getLogger(__name__)
 
 MAGIC_PREFIX = "RNS|"
 MAX_CHUNKS = 15
@@ -27,7 +29,7 @@ class ChunkEncoder:
 
     def encode_packet(self, data: bytes) -> list:
         """Encode a raw RNS packet into a list of chunked MeshCore message strings."""
-        b64 = base64.b64encode(data).decode("ascii")
+        b64 = base64.urlsafe_b64encode(data).decode("ascii")
         chunk_size = self.max_payload_chars
         chunks = [b64[i:i + chunk_size] for i in range(0, len(b64), chunk_size)]
         total = len(chunks)
@@ -101,9 +103,14 @@ class ReassemblyBuffer:
                 # Reassemble base64 string in order, then decode
                 full_b64 = "".join(buf["chunks"][i] for i in range(buf["total"]))
                 del self._buffers[key]
+                # Restore padding that may be stripped in transit
+                padding = 4 - (len(full_b64) % 4)
+                if padding < 4:
+                    full_b64 += "=" * padding
                 try:
-                    return base64.b64decode(full_b64)
-                except base64.binascii.Error:
+                    return base64.urlsafe_b64decode(full_b64)
+                except base64.binascii.Error as e:
+                    log.error(f"Base64 decode failed for {key}: {e}")
                     return None
 
         return None
