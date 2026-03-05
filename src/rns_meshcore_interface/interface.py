@@ -4,7 +4,7 @@ import time
 import threading
 from RNS.Interfaces.Interface import Interface
 
-from .chunking import ChunkEncoder, ReassemblyBuffer
+from .chunking import ChunkEncoder, ReassemblyBuffer, DEFAULT_MAX_MSG_LEN
 from .airtime import AirtimeController
 from .transport import MeshCoreTransport
 
@@ -38,7 +38,7 @@ class MeshCoreInterface(Interface):
         tcp_host = ifconf.get("tcp_host", None)
         tcp_port = int(ifconf.get("tcp_port", 5555))
         peer_address = ifconf.get("peer_address", None)
-        max_msg_len = int(ifconf.get("max_msg_len", 200))
+        max_msg_len = int(ifconf.get("max_msg_len", DEFAULT_MAX_MSG_LEN))
         tx_delay_ms = int(ifconf.get("tx_delay_ms", 500))
         max_airtime_percent = float(ifconf.get("max_airtime_percent", 0))
 
