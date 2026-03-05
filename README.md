@@ -65,7 +65,7 @@ rnsd
 | `peer_address` | — | **Required.** Hex public key prefix of peer node (min 12 chars) |
 | `tx_delay_ms` | `500` | Minimum milliseconds between transmissions |
 | `max_airtime_percent` | `0` | Maximum TX duty cycle % (0 = unlimited) |
-| `max_msg_len` | `200` | Max characters per MeshCore message |
+| `max_msg_len` | `140` | Max characters per MeshCore message |
 | `mode` | `gateway` | Interface mode: `full`, `gateway`, `access_point`, `roaming`, `boundary`, `point_to_point` |
 
 ## Protocol
@@ -76,15 +76,15 @@ Each MeshCore message carrying RNS data uses this format:
 RNS|<msg_id:2hex>|<chunk_idx:1hex>|<total:1hex>|<base64_payload>
 ```
 
-- Header overhead: 14 characters (`RNS|XX|X|X|`)
-- ~186 characters available for base64 payload per message (at 200 char limit)
-- ~139 bytes of raw binary per chunk
-- Max RNS packet (500 bytes) = ~4 chunks
+- Header overhead: 11 characters (`RNS|XX|X|X|`)
+- ~129 characters available for base64 payload per message (at 140 char limit)
+- ~96 bytes of raw binary per chunk
+- Max RNS packet (500 bytes) = ~7 chunks
 
 ### Design Decisions
 
-- **Fire-and-forget**: No per-chunk ACKs at the MeshCore layer. Reticulum handles reliability at the Link/Transport level. Waiting for LoRa ACKs per chunk would add 5-30s per chunk.
-- **Base64 encoding**: MeshCore's `send_msg()` sends text messages. Binary data is base64-encoded. This can be optimized to raw binary when `SEND_RAW_DATA` is fully implemented in meshcore_py.
+- **Per-chunk ACK with retry**: Each chunk uses MeshCore's `send_msg_with_retry()`, which waits for ACK, retries up to 3 times, and falls back to flood routing to discover new paths if the recorded direct path fails.
+- **URL-safe base64 encoding**: MeshCore's messaging sends text, so binary data is URL-safe base64-encoded (avoids `+`/`/` mangling). Trailing `=` padding is restored at reassembly since MeshCore strips it. This can be optimized to raw binary when `SEND_RAW_DATA` is fully implemented in meshcore_py.
 - **Async bridge**: Reticulum interfaces are synchronous/threaded, while meshcore_py is fully async. An asyncio event loop runs in a dedicated daemon thread.
 
 ## Limitations
