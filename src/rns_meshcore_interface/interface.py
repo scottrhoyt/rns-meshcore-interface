@@ -1,3 +1,4 @@
+import hashlib
 import RNS
 import time
 import threading
@@ -127,6 +128,8 @@ class MeshCoreInterface(Interface):
             RNS.log(f"{self} packet too large: {e}", RNS.LOG_ERROR)
             return
 
+        RNS.log(f"{self} TX {len(data)} bytes, sha256={hashlib.sha256(data).hexdigest()[:16]}", RNS.LOG_DEBUG)
+
         for chunk_msg in chunks:
             self.airtime.wait_for_tx_slot()
             success = self.transport.send_message(chunk_msg)
@@ -163,7 +166,7 @@ class MeshCoreInterface(Interface):
         packet_data = self.reassembly.add_chunk(sender, msg_id, chunk_idx, total, b64_fragment)
 
         if packet_data is not None:
-            RNS.log(f"{self} reassembled {len(packet_data)} bytes from {sender}", RNS.LOG_DEBUG)
+            RNS.log(f"{self} RX reassembled {len(packet_data)} bytes from {sender}, sha256={hashlib.sha256(packet_data).hexdigest()[:16]}", RNS.LOG_DEBUG)
             self.rxb += len(packet_data)
             self.owner.inbound(packet_data, self)
         elif chunk_idx == total - 1:
