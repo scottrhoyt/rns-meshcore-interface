@@ -130,11 +130,6 @@ class MeshCoreTransport:
                 EventType.CONTACT_MSG_RECV, self._on_incoming_message
             )
 
-            # Debug: log all events from the device
-            self._debug_sub = self._mc.subscribe(
-                None, self._on_debug_event
-            )
-
             # Fetch device info for radio params
             self._radio_params = dict(self._mc.self_info) if self._mc.self_info else {}
 
@@ -206,16 +201,11 @@ class MeshCoreTransport:
                 log.warning(f"Reconnection failed: {e}")
                 delay = min(delay * 2, max_delay)
 
-    async def _on_debug_event(self, event):
-        """Temporary debug: log all events from the device."""
-        log.debug(f"MeshCore event: type={event.type}, payload_keys={list(event.payload.keys()) if isinstance(event.payload, dict) else type(event.payload).__name__}")
-
     async def _on_incoming_message(self, event):
         """Handle incoming MeshCore message events."""
         try:
             sender = event.payload.get("pubkey_prefix", "unknown")
             text = event.payload.get("text", "")
-            log.debug(f"Received message from {sender}: {text[:80]}")
             if self.on_message:
                 self.on_message(sender, text)
         except Exception as e:
