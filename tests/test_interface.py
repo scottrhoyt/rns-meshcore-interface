@@ -22,7 +22,7 @@ class FakeMeshCoreForInterface:
         def __init__(self, parent):
             self._parent = parent
 
-        async def send_msg(self, dst, msg):
+        async def send_msg_with_retry(self, dst, msg):
             self._parent.sent_messages.append((dst, msg))
             from meshcore.events import EventType, Event
             return Event(EventType.MSG_SENT, {

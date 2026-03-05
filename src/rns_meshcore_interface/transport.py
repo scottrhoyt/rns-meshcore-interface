@@ -82,14 +82,14 @@ class MeshCoreTransport:
         self._is_connected = False
 
     def send_message(self, text: str) -> bool:
-        """Send a message to the peer node. Blocks until sent (fire-and-forget, no ACK wait)."""
+        """Send a message to the peer node. Blocks until ACK or retry exhaustion."""
         if not self._is_connected or not self._loop:
             return False
         try:
             future = asyncio.run_coroutine_threadsafe(
                 self._send_msg(text), self._loop
             )
-            result = future.result(timeout=15)
+            result = future.result(timeout=120)
             return result
         except Exception as e:
             log.error(f"Send failed: {e}")
@@ -161,10 +161,10 @@ class MeshCoreTransport:
         if not self._mc:
             return False
         try:
-            result = await self._mc.commands.send_msg(self.peer_address, text)
-            from meshcore.events import EventType
-
-            return result.type == EventType.MSG_SENT
+            result = await self._mc.commands.send_msg_with_retry(
+                self.peer_address, text
+            )
+            return result is not None
         except Exception as e:
             log.error(f"send_msg error: {e}")
             self._handle_connection_lost()
