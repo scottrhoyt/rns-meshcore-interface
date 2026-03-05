@@ -92,7 +92,7 @@ RNS|<msg_id:2hex>|<chunk_idx:1hex>|<total:1hex>|<base64_payload>
 - Maximum packet size is 500 bytes (Reticulum default MTU)
 - Effective throughput is limited by LoRa airtime and TX delays
 - Base64 encoding adds ~37% overhead
-- No encryption at the MeshCore transport layer (Reticulum provides its own encryption)
+- MeshCore encrypts direct messages at the firmware level using contact public keys, in addition to Reticulum's own encryption
 
 ## Development
 
