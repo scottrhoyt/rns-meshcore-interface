@@ -41,6 +41,12 @@ class FakeMeshCoreForInterface:
     def unsubscribe(self, sub):
         self._subscriptions.pop(sub.id, None)
 
+    async def start_auto_message_fetching(self):
+        pass
+
+    async def stop_auto_message_fetching(self):
+        pass
+
     async def disconnect(self):
         pass
 

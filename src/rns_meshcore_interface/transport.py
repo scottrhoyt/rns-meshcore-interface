@@ -133,6 +133,9 @@ class MeshCoreTransport:
             # Fetch device info for radio params
             self._radio_params = dict(self._mc.self_info) if self._mc.self_info else {}
 
+            # Start auto-fetching so incoming messages are retrieved from device
+            await self._mc.start_auto_message_fetching()
+
             self._is_connected = True
             log.info("MeshCore transport connected")
 
@@ -147,6 +150,7 @@ class MeshCoreTransport:
                 self._mc.unsubscribe(self._subscription)
                 self._subscription = None
             if self._mc:
+                await self._mc.stop_auto_message_fetching()
                 await self._mc.disconnect()
                 self._mc = None
         except Exception as e:
