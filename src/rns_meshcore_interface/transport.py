@@ -31,6 +31,8 @@ class MeshCoreTransport:
         meshcore_factory=None,
         route=None,
         allow_flood_fallback=True,
+        advert_on_start=True,
+        advert_interval=0,
     ):
         self.connection_type = connection_type
         self.serial_port = serial_port
@@ -41,11 +43,14 @@ class MeshCoreTransport:
         self._meshcore_factory = meshcore_factory
         self.route = route
         self.allow_flood_fallback = allow_flood_fallback
+        self.advert_on_start = advert_on_start
+        self.advert_interval = advert_interval
 
         self._loop = None
         self._thread = None
         self._mc = None
         self._subscription = None
+        self._advert_task = None
         self._is_connected = False
         self._stopping = False
         self._radio_params = {}
@@ -147,13 +152,42 @@ class MeshCoreTransport:
             self._is_connected = True
             log.info("MeshCore transport connected")
 
+            # Send flood advert on startup if configured
+            if self.advert_on_start:
+                try:
+                    await self._mc.commands.send_advert(flood=True)
+                    log.info("Sent flood advert on startup")
+                except Exception as e:
+                    log.warning(f"Failed to send startup flood advert: {e}")
+
+            # Start periodic flood advert if configured
+            if self.advert_interval > 0:
+                self._advert_task = asyncio.ensure_future(self._periodic_advert())
+
         except Exception as e:
             log.error(f"MeshCore connection failed: {e}")
             self._is_connected = False
             raise
 
+    async def _periodic_advert(self):
+        """Periodically send flood advertisements."""
+        while not self._stopping and self._is_connected:
+            try:
+                await asyncio.sleep(self.advert_interval)
+                if self._stopping or not self._is_connected:
+                    break
+                await self._mc.commands.send_advert(flood=True)
+                log.info("Sent periodic flood advert")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                log.warning(f"Periodic flood advert failed: {e}")
+
     async def _disconnect(self):
         try:
+            if self._advert_task:
+                self._advert_task.cancel()
+                self._advert_task = None
             if self._subscription:
                 self._mc.unsubscribe(self._subscription)
                 self._subscription = None

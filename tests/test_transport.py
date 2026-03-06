@@ -17,6 +17,7 @@ class FakeMeshCore:
         self._subscriptions = {}
         self._sub_counter = 0
         self.sent_messages = []
+        self.adverts_sent = []
         self.disconnected = False
         self.commands = self._Commands(self)
 
@@ -38,6 +39,13 @@ class FakeMeshCore:
 
         async def change_contact_path(self, contact, path):
             self.path_changes.append((contact, path))
+            from meshcore.events import EventType
+            event = MagicMock()
+            event.type = EventType.OK
+            return event
+
+        async def send_advert(self, flood=False):
+            self._parent.adverts_sent.append({"flood": flood})
             from meshcore.events import EventType
             event = MagicMock()
             event.type = EventType.OK
@@ -245,3 +253,63 @@ class TestMeshCoreTransport:
         _, _, kwargs = mc.sent_messages[0]
         assert "max_flood_attempts" not in kwargs
         transport.stop()
+
+    def test_flood_advert_on_start(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            advert_on_start=True,
+        )
+        transport.start()
+        mc = _last_fake_mc
+        assert len(mc.adverts_sent) == 1
+        assert mc.adverts_sent[0]["flood"] is True
+        transport.stop()
+
+    def test_no_flood_advert_on_start_when_disabled(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            advert_on_start=False,
+        )
+        transport.start()
+        mc = _last_fake_mc
+        assert len(mc.adverts_sent) == 0
+        transport.stop()
+
+    def test_periodic_advert_task_started(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            advert_on_start=False,
+            advert_interval=1,
+        )
+        transport.start()
+        assert transport._advert_task is not None
+        assert not transport._advert_task.done()
+        transport.stop()
+
+    def test_no_periodic_advert_when_interval_zero(self):
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            advert_interval=0,
+        )
+        transport.start()
+        assert transport._advert_task is None
+        transport.stop()
+
+    def test_advert_task_cancelled_on_disconnect(self):
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            advert_on_start=False,
+            advert_interval=60,
+        )
+        transport.start()
+        assert transport._advert_task is not None
+        transport.stop()
+        assert transport._advert_task is None

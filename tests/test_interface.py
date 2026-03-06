@@ -16,6 +16,7 @@ class FakeMeshCoreForInterface:
         self._subscriptions = {}
         self._sub_counter = 0
         self.sent_messages = []
+        self.adverts_sent = []
         self.commands = self._Commands(self)
 
     class _Commands:
@@ -38,6 +39,11 @@ class FakeMeshCoreForInterface:
 
         async def change_contact_path(self, contact, path):
             self.path_changes.append((contact, path))
+            from meshcore.events import EventType, Event
+            return Event(EventType.OK, {})
+
+        async def send_advert(self, flood=False):
+            self._parent.adverts_sent.append({"flood": flood})
             from meshcore.events import EventType, Event
             return Event(EventType.OK, {})
 
@@ -199,6 +205,22 @@ class TestMeshCoreInterface:
         iface, owner = make_interface()
         assert iface.transport.allow_flood_fallback is True
         assert iface.transport.route is None
+        iface.detach()
+
+    def test_advert_on_start_passed_to_transport(self):
+        iface, owner = make_interface(advert_on_start="false")
+        assert iface.transport.advert_on_start is False
+        iface.detach()
+
+    def test_advert_interval_passed_to_transport(self):
+        iface, owner = make_interface(advert_interval="300")
+        assert iface.transport.advert_interval == 300
+        iface.detach()
+
+    def test_advert_defaults(self):
+        iface, owner = make_interface()
+        assert iface.transport.advert_on_start is True
+        assert iface.transport.advert_interval == 0
         iface.detach()
 
     def test_periodic_cleanup_runs(self):

@@ -42,6 +42,8 @@ class MeshCoreInterface(Interface):
         max_airtime_percent = float(ifconf.get("max_airtime_percent", 0))
         route = ifconf.get("route", None)
         allow_flood_fallback = str(ifconf.get("allow_flood_fallback", "true")).lower() == "true"
+        advert_on_start = str(ifconf.get("advert_on_start", "true")).lower() == "true"
+        advert_interval = int(ifconf.get("advert_interval", 0))
 
         if peer_address is None or len(peer_address) < 12:
             raise ValueError(
@@ -76,6 +78,8 @@ class MeshCoreInterface(Interface):
             meshcore_factory=meshcore_factory,
             route=route,
             allow_flood_fallback=allow_flood_fallback,
+            advert_on_start=advert_on_start,
+            advert_interval=advert_interval,
         )
         self.transport.on_message = self._handle_incoming
         self.transport.on_disconnect = self._on_transport_disconnect
