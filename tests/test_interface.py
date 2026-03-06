@@ -21,15 +21,25 @@ class FakeMeshCoreForInterface:
     class _Commands:
         def __init__(self, parent):
             self._parent = parent
+            self.path_changes = []
+            self._contacts = []
 
-        async def send_msg_with_retry(self, dst, msg):
-            self._parent.sent_messages.append((dst, msg))
+        async def send_msg_with_retry(self, dst, msg, **kwargs):
+            self._parent.sent_messages.append((dst, msg, kwargs))
             from meshcore.events import EventType, Event
             return Event(EventType.MSG_SENT, {
                 "type": 0,
                 "expected_ack": b"\x00\x00\x00\x00",
                 "suggested_timeout": 5000,
             })
+
+        async def get_contacts(self):
+            return self._contacts
+
+        async def change_contact_path(self, contact, path):
+            self.path_changes.append((contact, path))
+            from meshcore.events import EventType, Event
+            return Event(EventType.OK, {})
 
     def subscribe(self, event_type, callback):
         self._sub_counter += 1
@@ -173,6 +183,22 @@ class TestMeshCoreInterface:
         assert not iface.online
         iface._on_transport_reconnect()
         assert iface.online
+        iface.detach()
+
+    def test_route_passed_to_transport(self):
+        iface, owner = make_interface(route="23,5f,3a")
+        assert iface.transport.route == "23,5f,3a"
+        iface.detach()
+
+    def test_allow_flood_fallback_false(self):
+        iface, owner = make_interface(allow_flood_fallback="false")
+        assert iface.transport.allow_flood_fallback is False
+        iface.detach()
+
+    def test_allow_flood_fallback_default(self):
+        iface, owner = make_interface()
+        assert iface.transport.allow_flood_fallback is True
+        assert iface.transport.route is None
         iface.detach()
 
     def test_periodic_cleanup_runs(self):

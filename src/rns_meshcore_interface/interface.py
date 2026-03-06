@@ -40,6 +40,8 @@ class MeshCoreInterface(Interface):
         max_msg_len = int(ifconf.get("max_msg_len", DEFAULT_MAX_MSG_LEN))
         tx_delay_ms = int(ifconf.get("tx_delay_ms", 500))
         max_airtime_percent = float(ifconf.get("max_airtime_percent", 0))
+        route = ifconf.get("route", None)
+        allow_flood_fallback = str(ifconf.get("allow_flood_fallback", "true")).lower() == "true"
 
         if peer_address is None or len(peer_address) < 12:
             raise ValueError(
@@ -72,6 +74,8 @@ class MeshCoreInterface(Interface):
             tcp_port=tcp_port,
             peer_address=peer_address,
             meshcore_factory=meshcore_factory,
+            route=route,
+            allow_flood_fallback=allow_flood_fallback,
         )
         self.transport.on_message = self._handle_incoming
         self.transport.on_disconnect = self._on_transport_disconnect

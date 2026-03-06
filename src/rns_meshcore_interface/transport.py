@@ -29,6 +29,8 @@ class MeshCoreTransport:
         tcp_port=5555,
         peer_address=None,
         meshcore_factory=None,
+        route=None,
+        allow_flood_fallback=True,
     ):
         self.connection_type = connection_type
         self.serial_port = serial_port
@@ -37,6 +39,8 @@ class MeshCoreTransport:
         self.tcp_port = tcp_port
         self.peer_address = peer_address
         self._meshcore_factory = meshcore_factory
+        self.route = route
+        self.allow_flood_fallback = allow_flood_fallback
 
         self._loop = None
         self._thread = None
@@ -136,6 +140,10 @@ class MeshCoreTransport:
             # Start auto-fetching so incoming messages are retrieved from device
             await self._mc.start_auto_message_fetching()
 
+            # Apply manual route if configured
+            if self.route:
+                await self._apply_route()
+
             self._is_connected = True
             log.info("MeshCore transport connected")
 
@@ -157,12 +165,36 @@ class MeshCoreTransport:
             log.warning(f"Error during disconnect: {e}")
         self._is_connected = False
 
+    async def _apply_route(self):
+        """Set the manual route on the peer contact."""
+        try:
+            contacts = await self._mc.commands.get_contacts()
+            contact = None
+            for c in contacts:
+                pk = c.get("public_key", "")
+                if pk.startswith(self.peer_address) or self.peer_address.startswith(pk):
+                    contact = c
+                    break
+            if contact is None:
+                log.warning(
+                    f"Peer {self.peer_address} not found in contacts, "
+                    "cannot apply manual route"
+                )
+                return
+            await self._mc.commands.change_contact_path(contact, self.route)
+            log.info(f"Applied manual route: {self.route}")
+        except Exception as e:
+            log.error(f"Failed to apply manual route: {e}")
+
     async def _send_msg(self, text: str) -> bool:
         if not self._mc:
             return False
         try:
+            kwargs = {}
+            if not self.allow_flood_fallback:
+                kwargs["max_flood_attempts"] = 0
             result = await self._mc.commands.send_msg_with_retry(
-                self.peer_address, text
+                self.peer_address, text, **kwargs
             )
             return result is not None
         except Exception as e:

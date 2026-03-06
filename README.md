@@ -67,6 +67,8 @@ rnsd
 | `max_airtime_percent` | `0` | Maximum TX duty cycle % (0 = unlimited) |
 | `max_msg_len` | `140` | Max characters per MeshCore message |
 | `mode` | `gateway` | Interface mode: `full`, `gateway`, `access_point`, `roaming`, `boundary`, `point_to_point` |
+| `route` | *(none)* | Manual route as comma-separated hex hashes of repeater nodes (e.g. `23,5f,3a`) |
+| `allow_flood_fallback` | `true` | Allow flood routing fallback when the configured route fails |
 
 ## Protocol
 
