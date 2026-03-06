@@ -219,7 +219,8 @@ class MeshCoreTransport:
     async def _apply_path(self):
         """Set the manual path on the peer contact."""
         try:
-            contacts = await self._mc.commands.get_contacts()
+            result = await self._mc.commands.get_contacts()
+            contacts = result.payload if hasattr(result, 'payload') else result
             contact = None
             for c in contacts:
                 pk = c.get("public_key", "")
