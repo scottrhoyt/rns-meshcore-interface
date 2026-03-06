@@ -221,6 +221,9 @@ class MeshCoreTransport:
         try:
             result = await self._mc.commands.get_contacts()
             contacts = result.payload if hasattr(result, 'payload') else result
+            # contacts is a dict keyed by public_key
+            if isinstance(contacts, dict):
+                contacts = contacts.values()
             contact = None
             for c in contacts:
                 pk = c.get("public_key", "")
