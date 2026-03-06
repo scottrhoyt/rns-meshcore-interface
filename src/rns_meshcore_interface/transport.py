@@ -145,20 +145,21 @@ class MeshCoreTransport:
             # Start auto-fetching so incoming messages are retrieved from device
             await self._mc.start_auto_message_fetching()
 
-            # Apply manual route if configured
-            if self.route:
-                await self._apply_route()
-
             self._is_connected = True
             log.info("MeshCore transport connected")
 
             # Send flood advert on startup if configured
+            # (before route, so path updates don't overwrite the manual route)
             if self.advert_on_start:
                 try:
                     await self._mc.commands.send_advert(flood=True)
                     log.info("Sent flood advert on startup")
                 except Exception as e:
                     log.warning(f"Failed to send startup flood advert: {e}")
+
+            # Apply manual route if configured (after advert)
+            if self.route:
+                await self._apply_route()
 
             # Start periodic flood advert if configured
             if self.advert_interval > 0:
@@ -178,6 +179,8 @@ class MeshCoreTransport:
                     break
                 await self._mc.commands.send_advert(flood=True)
                 log.info("Sent periodic flood advert")
+                if self.route:
+                    await self._apply_route()
             except asyncio.CancelledError:
                 break
             except Exception as e:
