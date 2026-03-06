@@ -189,7 +189,7 @@ class TestMeshCoreTransport:
         # Should not start reconnect loop when stopping
         transport.stop()
 
-    def test_route_applied_on_connect(self):
+    def test_path_applied_on_connect(self):
         global _last_fake_mc
         peer_pk = "a1b2c3d4e5f6" + "00" * 26  # 64 hex chars = 32 bytes
         contact = {"public_key": peer_pk, "out_path": "", "out_path_len": -1}
@@ -197,7 +197,7 @@ class TestMeshCoreTransport:
         transport = MeshCoreTransport(
             peer_address="a1b2c3d4e5f6",
             meshcore_factory=fake_factory,
-            route="23,5f,3a",
+            path="23,5f,3a",
         )
         # Pre-configure contacts on the fake after factory creates it
         original_factory = fake_factory
@@ -214,7 +214,7 @@ class TestMeshCoreTransport:
         assert mc.commands.path_changes[0] == (contact, "23,5f,3a")
         transport.stop()
 
-    def test_no_route_applied_when_not_configured(self):
+    def test_no_path_applied_when_not_configured(self):
         global _last_fake_mc
         transport = MeshCoreTransport(
             peer_address="a1b2c3d4e5f6",

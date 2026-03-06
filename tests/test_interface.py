@@ -191,9 +191,9 @@ class TestMeshCoreInterface:
         assert iface.online
         iface.detach()
 
-    def test_route_passed_to_transport(self):
-        iface, owner = make_interface(route="23,5f,3a")
-        assert iface.transport.route == "23,5f,3a"
+    def test_path_passed_to_transport(self):
+        iface, owner = make_interface(path="23,5f,3a")
+        assert iface.transport.path == "23,5f,3a"
         iface.detach()
 
     def test_allow_flood_fallback_false(self):
@@ -204,7 +204,7 @@ class TestMeshCoreInterface:
     def test_allow_flood_fallback_default(self):
         iface, owner = make_interface()
         assert iface.transport.allow_flood_fallback is True
-        assert iface.transport.route is None
+        assert iface.transport.path is None
         iface.detach()
 
     def test_retry_counts_passed_to_transport(self):

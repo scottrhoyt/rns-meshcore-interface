@@ -29,7 +29,7 @@ class MeshCoreTransport:
         tcp_port=5555,
         peer_address=None,
         meshcore_factory=None,
-        route=None,
+        path=None,
         allow_flood_fallback=True,
         max_retries=3,
         max_flood_retries=2,
@@ -43,7 +43,7 @@ class MeshCoreTransport:
         self.tcp_port = tcp_port
         self.peer_address = peer_address
         self._meshcore_factory = meshcore_factory
-        self.route = route
+        self.path = path
         self.allow_flood_fallback = allow_flood_fallback
         self.max_retries = max_retries
         self.max_flood_retries = max_flood_retries
@@ -153,7 +153,7 @@ class MeshCoreTransport:
             log.info("MeshCore transport connected")
 
             # Send flood advert on startup if configured
-            # (before route, so path updates don't overwrite the manual route)
+            # (before path, so advert updates don't overwrite the manual path)
             if self.advert_on_start:
                 try:
                     await self._mc.commands.send_advert(flood=True)
@@ -161,9 +161,9 @@ class MeshCoreTransport:
                 except Exception as e:
                     log.warning(f"Failed to send startup flood advert: {e}")
 
-            # Apply manual route if configured (after advert)
-            if self.route:
-                await self._apply_route()
+            # Apply manual path if configured (after advert)
+            if self.path:
+                await self._apply_path()
 
             # Start periodic flood advert if configured
             if self.advert_interval > 0:
@@ -183,8 +183,8 @@ class MeshCoreTransport:
                     break
                 await self._mc.commands.send_advert(flood=True)
                 log.info("Sent periodic flood advert")
-                if self.route:
-                    await self._apply_route()
+                if self.path:
+                    await self._apply_path()
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -206,8 +206,8 @@ class MeshCoreTransport:
             log.warning(f"Error during disconnect: {e}")
         self._is_connected = False
 
-    async def _apply_route(self):
-        """Set the manual route on the peer contact."""
+    async def _apply_path(self):
+        """Set the manual path on the peer contact."""
         try:
             contacts = await self._mc.commands.get_contacts()
             contact = None
@@ -219,13 +219,13 @@ class MeshCoreTransport:
             if contact is None:
                 log.warning(
                     f"Peer {self.peer_address} not found in contacts, "
-                    "cannot apply manual route"
+                    "cannot apply manual path"
                 )
                 return
-            await self._mc.commands.change_contact_path(contact, self.route)
-            log.info(f"Applied manual route: {self.route}")
+            await self._mc.commands.change_contact_path(contact, self.path)
+            log.info(f"Applied manual path: {self.path}")
         except Exception as e:
-            log.error(f"Failed to apply manual route: {e}")
+            log.error(f"Failed to apply manual path: {e}")
 
     async def _send_msg(self, text: str) -> bool:
         if not self._mc:

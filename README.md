@@ -67,8 +67,8 @@ rnsd
 | `max_airtime_percent` | `0` | Maximum TX duty cycle % (0 = unlimited) |
 | `max_msg_len` | `140` | Max characters per MeshCore message |
 | `mode` | `gateway` | Interface mode: `full`, `gateway`, `access_point`, `roaming`, `boundary`, `point_to_point` |
-| `route` | *(none)* | Manual route as comma-separated hex hashes of repeater nodes (e.g. `23,5f,3a`) |
-| `allow_flood_fallback` | `true` | Allow flood routing fallback when the configured route fails. When `false`, also prevents MeshCore from resetting the direct path on send failure. |
+| `path` | *(none)* | Manual path as comma-separated hex hashes of repeater nodes (e.g. `23,5f,3a`) |
+| `allow_flood_fallback` | `true` | Allow flood routing fallback when the configured path fails. When `false`, also prevents MeshCore from resetting the direct path on send failure. |
 | `max_retries` | `3` | Max direct path send attempts per message |
 | `max_flood_retries` | `2` | Max flood routing attempts per message (ignored if `allow_flood_fallback` is `false`) |
 | `advert_on_start` | `true` | Send a flood advertisement on interface startup |
@@ -89,7 +89,7 @@ RNS|<msg_id:2hex>|<chunk_idx:1hex>|<total:1hex>|<base64_payload>
 
 ### Design Decisions
 
-- **Per-chunk ACK with retry**: Each chunk uses MeshCore's `send_msg_with_retry()`, which waits for ACK and retries on failure. By default it retries up to 3 times on the direct path, then resets the path and falls back to flood routing for up to 2 more attempts. Retry counts are configurable via `max_retries` and `max_flood_retries`. Setting `allow_flood_fallback = false` disables both the flood fallback and the path reset, preserving any manually configured route.
+- **Per-chunk ACK with retry**: Each chunk uses MeshCore's `send_msg_with_retry()`, which waits for ACK and retries on failure. By default it retries up to 3 times on the direct path, then resets the path and falls back to flood routing for up to 2 more attempts. Retry counts are configurable via `max_retries` and `max_flood_retries`. Setting `allow_flood_fallback = false` disables both the flood fallback and the path reset, preserving any manually configured path.
 - **URL-safe base64 encoding**: MeshCore's messaging sends text, so binary data is URL-safe base64-encoded (avoids `+`/`/` mangling). Trailing `=` padding is restored at reassembly since MeshCore strips it. This can be optimized to raw binary when `SEND_RAW_DATA` is fully implemented in meshcore_py.
 - **Async bridge**: Reticulum interfaces are synchronous/threaded, while meshcore_py is fully async. An asyncio event loop runs in a dedicated daemon thread.
 

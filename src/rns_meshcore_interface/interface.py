@@ -40,7 +40,7 @@ class MeshCoreInterface(Interface):
         max_msg_len = int(ifconf.get("max_msg_len", DEFAULT_MAX_MSG_LEN))
         tx_delay_ms = int(ifconf.get("tx_delay_ms", 500))
         max_airtime_percent = float(ifconf.get("max_airtime_percent", 0))
-        route = ifconf.get("route", None)
+        path = ifconf.get("path", None)
         allow_flood_fallback = str(ifconf.get("allow_flood_fallback", "true")).lower() == "true"
         max_retries = int(ifconf.get("max_retries", 3))
         max_flood_retries = int(ifconf.get("max_flood_retries", 2))
@@ -78,7 +78,7 @@ class MeshCoreInterface(Interface):
             tcp_port=tcp_port,
             peer_address=peer_address,
             meshcore_factory=meshcore_factory,
-            route=route,
+            path=path,
             allow_flood_fallback=allow_flood_fallback,
             max_retries=max_retries,
             max_flood_retries=max_flood_retries,
