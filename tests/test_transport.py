@@ -239,6 +239,8 @@ class TestMeshCoreTransport:
         _, _, kwargs = mc.sent_messages[0]
         assert kwargs["max_flood_attempts"] == 0
         assert kwargs["max_attempts"] == 3
+        # flood_after must exceed max_attempts to prevent path reset
+        assert kwargs["flood_after"] > kwargs["max_attempts"]
         transport.stop()
 
     def test_flood_fallback_enabled_by_default(self):
@@ -254,6 +256,7 @@ class TestMeshCoreTransport:
         _, _, kwargs = mc.sent_messages[0]
         assert kwargs["max_attempts"] == 3
         assert kwargs["max_flood_attempts"] == 2
+        assert kwargs["flood_after"] == 2
         transport.stop()
 
     def test_custom_retry_counts(self):

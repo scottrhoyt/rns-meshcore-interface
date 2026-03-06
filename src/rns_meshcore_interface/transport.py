@@ -232,10 +232,14 @@ class MeshCoreTransport:
             return False
         try:
             flood_retries = 0 if not self.allow_flood_fallback else self.max_flood_retries
+            # If flood is disabled, set flood_after beyond max_attempts
+            # to prevent send_msg_with_retry from resetting the path
+            flood_after = 2 if flood_retries > 0 else self.max_retries + 1
             result = await self._mc.commands.send_msg_with_retry(
                 self.peer_address, text,
                 max_attempts=self.max_retries,
                 max_flood_attempts=flood_retries,
+                flood_after=flood_after,
             )
             return result is not None
         except Exception as e:
