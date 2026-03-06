@@ -207,6 +207,18 @@ class TestMeshCoreInterface:
         assert iface.transport.route is None
         iface.detach()
 
+    def test_retry_counts_passed_to_transport(self):
+        iface, owner = make_interface(max_retries="5", max_flood_retries="4")
+        assert iface.transport.max_retries == 5
+        assert iface.transport.max_flood_retries == 4
+        iface.detach()
+
+    def test_retry_defaults(self):
+        iface, owner = make_interface()
+        assert iface.transport.max_retries == 3
+        assert iface.transport.max_flood_retries == 2
+        iface.detach()
+
     def test_advert_on_start_passed_to_transport(self):
         iface, owner = make_interface(advert_on_start="false")
         assert iface.transport.advert_on_start is False

@@ -69,6 +69,8 @@ rnsd
 | `mode` | `gateway` | Interface mode: `full`, `gateway`, `access_point`, `roaming`, `boundary`, `point_to_point` |
 | `route` | *(none)* | Manual route as comma-separated hex hashes of repeater nodes (e.g. `23,5f,3a`) |
 | `allow_flood_fallback` | `true` | Allow flood routing fallback when the configured route fails |
+| `max_retries` | `3` | Max direct path send attempts per message |
+| `max_flood_retries` | `2` | Max flood routing attempts per message (ignored if `allow_flood_fallback` is `false`) |
 | `advert_on_start` | `true` | Send a flood advertisement on interface startup |
 | `advert_interval` | `0` | Periodic flood advertisement interval in seconds (0 = disabled) |
 

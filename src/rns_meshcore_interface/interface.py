@@ -42,6 +42,8 @@ class MeshCoreInterface(Interface):
         max_airtime_percent = float(ifconf.get("max_airtime_percent", 0))
         route = ifconf.get("route", None)
         allow_flood_fallback = str(ifconf.get("allow_flood_fallback", "true")).lower() == "true"
+        max_retries = int(ifconf.get("max_retries", 3))
+        max_flood_retries = int(ifconf.get("max_flood_retries", 2))
         advert_on_start = str(ifconf.get("advert_on_start", "true")).lower() == "true"
         advert_interval = int(ifconf.get("advert_interval", 0))
 
@@ -78,6 +80,8 @@ class MeshCoreInterface(Interface):
             meshcore_factory=meshcore_factory,
             route=route,
             allow_flood_fallback=allow_flood_fallback,
+            max_retries=max_retries,
+            max_flood_retries=max_flood_retries,
             advert_on_start=advert_on_start,
             advert_interval=advert_interval,
         )

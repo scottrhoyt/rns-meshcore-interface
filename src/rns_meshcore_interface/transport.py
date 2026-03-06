@@ -31,6 +31,8 @@ class MeshCoreTransport:
         meshcore_factory=None,
         route=None,
         allow_flood_fallback=True,
+        max_retries=3,
+        max_flood_retries=2,
         advert_on_start=True,
         advert_interval=0,
     ):
@@ -43,6 +45,8 @@ class MeshCoreTransport:
         self._meshcore_factory = meshcore_factory
         self.route = route
         self.allow_flood_fallback = allow_flood_fallback
+        self.max_retries = max_retries
+        self.max_flood_retries = max_flood_retries
         self.advert_on_start = advert_on_start
         self.advert_interval = advert_interval
 
@@ -227,11 +231,11 @@ class MeshCoreTransport:
         if not self._mc:
             return False
         try:
-            kwargs = {}
-            if not self.allow_flood_fallback:
-                kwargs["max_flood_attempts"] = 0
+            flood_retries = 0 if not self.allow_flood_fallback else self.max_flood_retries
             result = await self._mc.commands.send_msg_with_retry(
-                self.peer_address, text, **kwargs
+                self.peer_address, text,
+                max_attempts=self.max_retries,
+                max_flood_attempts=flood_retries,
             )
             return result is not None
         except Exception as e:

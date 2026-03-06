@@ -238,6 +238,7 @@ class TestMeshCoreTransport:
         assert len(mc.sent_messages) == 1
         _, _, kwargs = mc.sent_messages[0]
         assert kwargs["max_flood_attempts"] == 0
+        assert kwargs["max_attempts"] == 3
         transport.stop()
 
     def test_flood_fallback_enabled_by_default(self):
@@ -251,7 +252,39 @@ class TestMeshCoreTransport:
         mc = _last_fake_mc
         assert len(mc.sent_messages) == 1
         _, _, kwargs = mc.sent_messages[0]
-        assert "max_flood_attempts" not in kwargs
+        assert kwargs["max_attempts"] == 3
+        assert kwargs["max_flood_attempts"] == 2
+        transport.stop()
+
+    def test_custom_retry_counts(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            max_retries=5,
+            max_flood_retries=4,
+        )
+        transport.start()
+        transport.send_message("RNS|00|0|1|dGVzdA==")
+        mc = _last_fake_mc
+        _, _, kwargs = mc.sent_messages[0]
+        assert kwargs["max_attempts"] == 5
+        assert kwargs["max_flood_attempts"] == 4
+        transport.stop()
+
+    def test_flood_fallback_disabled_overrides_max_flood_retries(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            allow_flood_fallback=False,
+            max_flood_retries=5,
+        )
+        transport.start()
+        transport.send_message("RNS|00|0|1|dGVzdA==")
+        mc = _last_fake_mc
+        _, _, kwargs = mc.sent_messages[0]
+        assert kwargs["max_flood_attempts"] == 0
         transport.stop()
 
     def test_flood_advert_on_start(self):
