@@ -17,6 +17,7 @@ class FakeMeshCoreForInterface:
         self._sub_counter = 0
         self.sent_messages = []
         self.adverts_sent = []
+        self.multi_acks_set = None
         self.commands = self._Commands(self)
 
     class _Commands:
@@ -44,6 +45,11 @@ class FakeMeshCoreForInterface:
 
         async def send_advert(self, flood=False):
             self._parent.adverts_sent.append({"flood": flood})
+            from meshcore.events import EventType, Event
+            return Event(EventType.OK, {})
+
+        async def set_multi_acks(self, multi_acks):
+            self._parent.multi_acks_set = multi_acks
             from meshcore.events import EventType, Event
             return Event(EventType.OK, {})
 
@@ -217,6 +223,16 @@ class TestMeshCoreInterface:
         iface, owner = make_interface()
         assert iface.transport.max_retries == 3
         assert iface.transport.max_flood_retries == 2
+        iface.detach()
+
+    def test_multi_acks_passed_to_transport(self):
+        iface, owner = make_interface(multi_acks="1")
+        assert iface.transport.multi_acks == 1
+        iface.detach()
+
+    def test_multi_acks_default_none(self):
+        iface, owner = make_interface()
+        assert iface.transport.multi_acks is None
         iface.detach()
 
     def test_advert_on_start_passed_to_transport(self):

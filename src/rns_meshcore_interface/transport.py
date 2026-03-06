@@ -35,6 +35,7 @@ class MeshCoreTransport:
         max_flood_retries=2,
         advert_on_start=True,
         advert_interval=0,
+        multi_acks=None,
     ):
         self.connection_type = connection_type
         self.serial_port = serial_port
@@ -49,6 +50,7 @@ class MeshCoreTransport:
         self.max_flood_retries = max_flood_retries
         self.advert_on_start = advert_on_start
         self.advert_interval = advert_interval
+        self.multi_acks = multi_acks
 
         self._loop = None
         self._thread = None
@@ -148,6 +150,14 @@ class MeshCoreTransport:
 
             # Start auto-fetching so incoming messages are retrieved from device
             await self._mc.start_auto_message_fetching()
+
+            # Apply device settings
+            if self.multi_acks is not None:
+                try:
+                    await self._mc.commands.set_multi_acks(self.multi_acks)
+                    log.info(f"Set multi_acks to {self.multi_acks}")
+                except Exception as e:
+                    log.warning(f"Failed to set multi_acks: {e}")
 
             self._is_connected = True
             log.info("MeshCore transport connected")

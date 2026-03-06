@@ -18,6 +18,7 @@ class FakeMeshCore:
         self._sub_counter = 0
         self.sent_messages = []
         self.adverts_sent = []
+        self.multi_acks_set = None
         self.disconnected = False
         self.commands = self._Commands(self)
 
@@ -46,6 +47,13 @@ class FakeMeshCore:
 
         async def send_advert(self, flood=False):
             self._parent.adverts_sent.append({"flood": flood})
+            from meshcore.events import EventType
+            event = MagicMock()
+            event.type = EventType.OK
+            return event
+
+        async def set_multi_acks(self, multi_acks):
+            self._parent.multi_acks_set = multi_acks
             from meshcore.events import EventType
             event = MagicMock()
             event.type = EventType.OK
@@ -349,3 +357,26 @@ class TestMeshCoreTransport:
         assert transport._advert_task is not None
         transport.stop()
         assert transport._advert_task is None
+
+    def test_multi_acks_set_on_connect(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+            multi_acks=1,
+        )
+        transport.start()
+        mc = _last_fake_mc
+        assert mc.multi_acks_set == 1
+        transport.stop()
+
+    def test_multi_acks_not_set_when_unspecified(self):
+        global _last_fake_mc
+        transport = MeshCoreTransport(
+            peer_address="a1b2c3d4e5f6",
+            meshcore_factory=fake_factory,
+        )
+        transport.start()
+        mc = _last_fake_mc
+        assert mc.multi_acks_set is None
+        transport.stop()

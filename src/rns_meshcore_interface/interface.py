@@ -44,6 +44,8 @@ class MeshCoreInterface(Interface):
         allow_flood_fallback = str(ifconf.get("allow_flood_fallback", "true")).lower() == "true"
         max_retries = int(ifconf.get("max_retries", 3))
         max_flood_retries = int(ifconf.get("max_flood_retries", 2))
+        multi_acks_raw = ifconf.get("multi_acks", None)
+        multi_acks = int(multi_acks_raw) if multi_acks_raw is not None else None
         advert_on_start = str(ifconf.get("advert_on_start", "true")).lower() == "true"
         advert_interval = int(ifconf.get("advert_interval", 0))
 
@@ -82,6 +84,7 @@ class MeshCoreInterface(Interface):
             allow_flood_fallback=allow_flood_fallback,
             max_retries=max_retries,
             max_flood_retries=max_flood_retries,
+            multi_acks=multi_acks,
             advert_on_start=advert_on_start,
             advert_interval=advert_interval,
         )
