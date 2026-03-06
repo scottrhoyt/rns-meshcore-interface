@@ -40,7 +40,11 @@ class MeshCoreInterface(Interface):
         max_msg_len = int(ifconf.get("max_msg_len", DEFAULT_MAX_MSG_LEN))
         tx_delay_ms = int(ifconf.get("tx_delay_ms", 500))
         max_airtime_percent = float(ifconf.get("max_airtime_percent", 0))
-        path = ifconf.get("path", None)
+        path_raw = ifconf.get("path", None)
+        if isinstance(path_raw, list):
+            path = "".join(path_raw)
+        else:
+            path = path_raw
         allow_flood_fallback = str(ifconf.get("allow_flood_fallback", "true")).lower() == "true"
         max_retries = int(ifconf.get("max_retries", 3))
         max_flood_retries = int(ifconf.get("max_flood_retries", 2))
